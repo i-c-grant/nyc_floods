@@ -1,0 +1,255 @@
+* Resources
+** [[https://dcp.maps.arcgis.com/apps/webappviewer/index.html?id=1c37d271fba14163bbb520517153d6d5][NYC Flood Hazard Mapper]]
+** [[https://dataviz.floodnet.nyc/][FloodNet]]
+*** [[https://github.com/floodnet-nyc/flood-sensor][FloodNet GitHub repo]]	
+** [[https://experience.arcgis.com/experience/6f4cc60710dc433585790cd2b4b5dd0e\]\]][NYC stormwater flood maps]]
+** [[https://data.cityofnewyork.us/Environment/Sandy-Inundation-Zone/uyj8-7rv5][Sandy inundation maps]]
+** [[https://www.earthdata.nasa.gov/s3fs-public/imported/Satellite_Property_Tables.pdf][NASA list of SAR missions]]
+** [[https://www.weather.gov/okx/stormevents][NYC storm events]]
+** [[https://coast.noaa.gov/stormwater-floods/understand/][NOAA understanding stormwater inundation]]
+** [[https://openseweratlas.tumblr.com/about][Open Sewer Atlas]]
+** [[https://pages.charlotte.edu/eric-delmelle/wp-content/uploads/sites/150/2019/09/Spatiotemporal-Point-Pattern-Analysis-Using-Ripleys-K-Function.pdf][Spatiotemporal point pattern analysis]]
+** [[https://data.cityofnewyork.us/City-Government/DEP-s-Citywide-Parcel-Based-Impervious-Area-GIS-St/uex9-rfq8/about_data][DEP impervious surface layer]]
+** [[https://water.weather.gov/precip/about.php][Precipitation data]]
+** [[https://www.earthdata.nasa.gov/learn/find-data/near-real-time/modis-nrt-global-flood-product][MODIS NRT daily flood data]]
+** [[https://www.nyc.gov/assets/dep/downloads/pdf/water/stormwater/ms4/nyc-swmp-plan-full.pdf][NYC Stormwater Management Plan]]
+
+* Next steps
+** TODO investigate hydrodynamic flood models that have been used/could be used in NYC
+** TODO talk to Sean about overall project and DEM 
+** TODO reach out to Floodbase person
+** DONE reach out to FloodNet person
+*** is there an API for accessing the FloodNet data?
+** TODO reach out to Bhibash
+** TODO research other products that NYC might have
+
+
+* Questions
+** DONE temporal resolution
+Is there enough overlap between pluvial flash floods and SAR for flood
+maps to be useful? For the remote sensing part, may be necessary to do
+big coastal flooding events instead. Train on coastal flooding events
+then use to detect pluvial flooding?
+
+Even then, though, does pluvial flooding last long enough to reliably
+overlap with, say, a daily capture? Would a daily pluvial flooding
+snapshot be useful, or is the process of flooding and drainage usually
+too fast?
+
+If so, would a coastal-flooding-based approach be preferable, assuming
+it lasts longer? Or maybe just build around coastal flooding and then
+test out performance for pluvial.
+
+*** Update <2024-01-27 Sat>
+Sentinel-1 seems worse than I expected in this regard, often very long
+revisit time. The SAR data might just be too scarce to be worth the
+trouble.
+
+** TODO rainfall intensity
+How to include rainfall intensity, not just precip. amount? Need rate
+of rainfall. To calc. some variable like "rainfall in last 30 mins" or
+hour Or model as precip. - rate of runoff/infiltration?
+
+* <2024-01-12 Fri>
+** potential project structures
+*** ground truth: the sensors
+*** try to predict FloodNet measurements with flood model
+**** potential inputs
+***** meteorological precipitation measurements
+***** remote sensing precipitation
+***** remote sensing flood cover observations
+** try to infer flood map from sensor and remote sensing measurements
+*** ground truth: some subset of the sensors
+*** flood model
+**** inputs
+***** DEM
+****** correction by GIS? (Xing, Chen, Liang, & Ma 2022)
+***** storm sewer system map?
+***** FloodNet observations
+***** meteorological info
+****** storm surge
+****** precipitation
+***** remote sensing imagery
+****** SAR, inSAR?
+**** output: flood map with uncertainty
+
+* <2024-01-16 Tue>
+** potential flood mapping plan
+*** pseudo-labelling
+- run local hydrodynamic flood models around FloodNet sensors
+- use model output to get pseudo-labels of flooded and non-flooded pixels
+*** training 
+- based on local flood modelling, each training pixel now has a classification history
+- get classification corresponding to each Sentinel-1 capture in the study period
+- train CNN on resulting dataset
+  - stacked CNN can also incorporate one-day-ago history
+  - but maybe this will not be necessary? 
+
+
+* <2024-01-20 Sat>
+** NYC stormwater flood maps :resource:
+[[https://experience.arcgis.com/experience/6f4cc60710dc433585790cd2b4b5dd0e]]
+** FloodNet repo
+[[https://github.com/floodnet-nyc/flood-sensor]]
+
+* <2024-01-25 Thu>
+** Hurricane Sandy inundation zone :resource:
+[[https://data.cityofnewyork.us/Environment/Sandy-Inundation-Zone/uyj8-7rv5]]
+** simplified idea
+*** Hurricane Sandy CNN case study
+- just try to do a CNN like in the literature but use NYC instead of Houston, etc.
+- if this succeeds, try to make a physically constrained CNN, where
+  loss function has a component that is determined by a physical flood
+  model (could be simple as just penalizing for high elevation)
+
+
+* <2024-01-26 Fri>
+** potential case studyies
+*** September 28-29th 2023, NYC flooding
+*** that database of extreme weather event
+*** Sandy
+*** Henri
+
+** topography index
+*** use to penalize false positives, implement in loss function
+
+* <2024-01-27 Sat>
+Tried to find SAR data for NYC, but not sure that there is any with
+sufficient temporal resolution.
+
+[[RADARSAT - https://www.eodms-sgdot.nrcan-rncan.gc.ca/index-en.html][RADARSAT doesn't seem to have much for NYC]]
+Sentinel-1 is low temporal res.
+
+Terra SAR X requires a proposal
+COSMO SkyMed requires a proposal
+
+311 data could be useful
+
+Potential different project idea: focus on "interpolating" FloodNet
+This could then also have a WebGIS component
+
+* <2024-01-28 Sun>
+** DONE emailed info@floodnet.net about data availability
+
+* <2024-01-30 Tue>
+Spoke with Jochen about project. He raised doubts about inundation
+extent mapping given the complexity of hydrological modelling, since
+much of the connectivity is underground. I mentioned how there wasn't
+enough SAR and he suggested simulating it through a physical model,
+but I don't think that's feasible.
+
+I downloaded 311 data from the Sept. 2023 event. There are about 1,000
+311 calls about blocked sewers just from those three days, and they
+have coordinates. It seems promising that FloodNet sensors and 311
+call datasets are both continuous in time. If we have FloodNet + 311 +
+dense meteorological data + DEM, how much could we infer about areas
+where the stormwater system has been overwhelmed? How would those
+different parts of the model fit together?
+
+Precipitation --> urban structure and infrastructure --> street flooding
+
+Street flooding --> FloodNet readings
+
+Street flooding --> human behavior --> 311 calls
+
+* <2024-02-01 Thu>
+** Planning
+New way to think about project: explain/detect spatial patterns in 311
+requests driven by: meteorology, sewer infrastructure, terrain.
+
+This approach has been used before by Open Sewer Atlas person and
+Agonafir et al. (2022). But we can use a more sophisticated
+point-pattern analysis instead of aggregating 311 calls into areas,
+and can also include the time dimension with continuous meteorological
+data and, ideally, FloodNet data.
+
+FloodNet not essential but could use to establish some relatioships
+between 311 complaints--indication of nuisance flooding--to physical
+inundation.
+
+** Possible methods
+*** spatstat: R package for point pattern analysis
+*** string-of-pearls model
+*** line segment model
+
+** Observation
+In the 9-30 event, southern Brooklyn was hit first. Then the rest of
+Brooklyn, then a cluster in Queens that looks like it might be along a
+line, i.e. a sewer main.
+
+- In theory, could model impact of DEP green infrastructure. Do they
+reduce 311 calls compared to model expectation?
+
+- Is there a statistical test for an unexpectedly linear arrangement
+  of points, instead of just a cluster? Could help to identify pipes
+  at
+
+* <2024-02-02 Fri>
+** investigation of dataset
+*** downloaded "flooding" 311 calls from the whole record
+**** ~150,000 calls
+**** Sandy shows clear pattern of calls along coasts
+** notes from Eric Sanderson talk
+Lucinda Royte is name of research assistant at NYBG, I think she did
+the GIS stuff
+
+*** 311 call analysis
+They did some, but I don't think anything statistically complex
+
+*** Rainproof NYC
+ongoing collaboration convening gov., nonprofit,
+design firms to come up with flooding solutions
+
+*** Ecological vs. civil engineering approaches
+**** Hydrology
+incoming precip. --> infiltration, evapotranspiration, runoff
+**** Hydraulic
+incoming precip. --> little infiltration, little evapotranspiration, high runoff
+
+*** Relevant factors to flooding
+**** Permeability 
+**** Height of water table
+***** long island has aquifers
+**** Bedrock depth
+**** Historical flooding--reconstructed hydrology of past NYC
+**** Predicted flood maps
+
+*** "Blue zone" concept
+**** GIS overlay of past, present, and future flooding
+**** Idea is that these areas will flood, need nature-based interventions
+
+* <2024-02-09 Fri>
+** meeting with Brett Branco
+*** New School flood maps
+*** FloodNet should be up to 500 sensors within next few years
+*** wants to introduce me to the rest of the team
+*** they want to do finer-grained precipitation stuff
+*** will be in contact with Polly for data
+
+* <2024-02-15 Thu>
+** project for remote sensing class--impervious surfaces over time in NYC?
+better fit for GEE
+
+* <2024-02-17 Sat>
+** impervious idea
+Issue with impervious idea is that there's not much change in NYC over that period. DEP did a study of impervious materials using segmentation then supervised classification. Maybe it would be possible to do a better classification using more hyperspectral data, but unclear if spatial res. over those satellites is good enough.
+
+** air pollution idea
+Wenge floated doing an air pollution deep learning project instead of the impervious idea. The general idea is to incorporate ground sensor data with satellite data through deep learning. This has been tried with mixed results in NYC; unclear if current satellite data actually helps much in NYC specifically. However, TEMPO is about to be released and will provide hourly, relatively coarse NO2 estimates at sub-urban scale. Best to wait for TEMPO and use it to test congestion pricing effect?
+
+** precipitation idea
+For the 311 project, I will ideally need high temporal, moderate spatial resolution precipitation data. PRISM provides daily gauge-based estimates using a regression model at 4 km spatial res. GPM provides two possibly useful products: .1° hourly rain and 4km 3-hourly rain. I could try to temporalize the daily PRISM data using the satellite patterns, then verify temporally against gauge data.
+
+Potential issue: final 4-km IMERG is already gauge-adjusted, and PRISM is gauge-based. So how would my product differ from IMERG? In theory, the answer is that would be a temporally decomposed representation of the PRISM model based on satellite temporal patterns; in contrast, IMERG is a gauge-corrected representation of satellite data. This seems promising because gauge data is better than satellite data for precipitation anyway, but satellites can uniquely capture the overall spatiotemporal pattern. So we can take PRISM as the "ground truth" and try to "animate" a given day of PRISM based on that day's satellite data.
+
+* <2024-02-19 Mon>
+** California atmospheric river idea
+Just follow GEE flood detection methodology from the paper w/ John Armston to analyze the extent of flooding from atmospheric rivers in California using Sentinel SAR.
+* <2024-02-22 Thu>
+Plans for precipitation part of thesis/GEE class project
+** Spatial precipitation map generator
+- Python tool where you specify ROI and optionally provide rain gauge
+CSVs
+- Tool downloads weather radar from Google Cloud Storage, processes to get precipitation estimates, and does gauge correction if possible
+- Output: summary statistics or stack of rasters
+

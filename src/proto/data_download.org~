@@ -1,0 +1,23 @@
+Google has NEXRAD data stored at
+https://cloud.google.com/storage/docs/public-datasets/nexrad.
+
+We can use the Python package google-cloud-storage to access the API.
+
+#+begin_src python
+from google.cloud import storage
+
+def download_blob(bucket_name, source_blob_name, destination_file_name):
+    storage_client = storage.Client()  
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(source_blob_name)
+    blob.download_to_filename(destination_file_name)
+    print(f'Blob {source_blob_name} downloaded to {destination_file_name}.')
+
+bucket_name = 'gcp-public-data-nexrad-l2'
+source_blob_name = '2024/03/15/KJFK/NWS_NEXRAD_NXL2DPBL_KDIX_20240309000000_20240309005959.tar'
+destination_file_name = '/media/ian/nexrad/test.tar'
+
+download_blob(bucket_name, source_blob_name, destination_file_name)
+#+end_src
+
+#+RESULTS:

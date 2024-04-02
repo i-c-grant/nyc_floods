@@ -1,0 +1,11 @@
+from datetime import datetime, timedelta 
+from siphon.radarserver import RadarServer
+
+rs = RadarServer('http://tds-nexrad.scigw.unidata.ucar.edu/thredds/radarServer/nexrad/level2/S3/')
+
+query = rs.query()
+yesterday = datetime.utcnow() - timedelta(days=1)
+query.stations('KLVX').time(yesterday)
+print(rs.validate_query(query))
+catalog = rs.get_catalog(query)
+print(catalog.keys())

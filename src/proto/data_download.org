@@ -1,0 +1,62 @@
+Adapated from https://nbviewer.org/gist/dopplershift/356f2e14832e9b676207.
+
+Siphon is a package by Unidata for accessing THREDDS data servers. 
+
+We can use the Python package google-cloud-storage to access the API.
+
+#+begin_src python :results output :session radar_nb
+from datetime import datetime, timedelta 
+from siphon.radarserver import RadarServer
+
+rs = RadarServer('http://tds-nexrad.scigw.unidata.ucar.edu/thredds/radarServer/nexrad/level2/S3/')
+
+query = rs.query()
+yesterday = datetime.utcnow() - timedelta(days=1)
+query.stations('KLVX').time(yesterday)
+print(rs.validate_query(query))
+catalog = rs.get_catalog(query)
+print(catalog.keys())
+#+end_src
+
+#+RESULTS:
+: True
+
+#+begin_src python :results output :session radar_nb
+catalog = rs.get_catalog(query)
+print(catalog.datasets)
+#+end_src
+
+#+RESULTS:
+: []
+
+
+Alternative boto3 method from Claude. 
+#+begin_src python
+import boto3
+
+# Create an S3 client
+s3 = boto3.client('s3')
+
+# Specify the bucket name
+bucket_name = 'noaa-nexrad-level2'
+
+# Specify the file path you want to access
+file_path = '2023/05/15/KABX/KABX20230515_000000_V06'
+
+try:
+    # Generate the presigned URL for the file
+    url = s3.generate_presigned_url(
+        'get_object',
+        Params={'Bucket': bucket_name, 'Key': file_path},
+        ExpiresIn=3600  # URL expiration time in seconds (e.g., 1 hour)
+    )
+    
+    print(f"Presigned URL: {url}")
+    
+    # Optionally, you can download the file
+    s3.download_file(bucket_name, file_path, 'downloaded_file.gz')
+    print("File downloaded successfully.")
+    
+except Exception as e:
+    print(f"Error accessing the file: {e}")
+#+end_src

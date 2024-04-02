@@ -1,0 +1,22 @@
+# Challenge of urban pluvial flooding
+
+
+# Difficult to sense with SAR, difficult to model
+
+# Pluvial flooding is mainly precipitation-driven
+
+# Ground-based weather radar provides very good spatial resolution of precipitation
+
+# However, radar reflectance must be processed to obtain precipitation
+
+# Therefore, while studies periodically publish spatial precipitation
+# datasets for specific cities and timeframes, these quickly become
+# outdated and have low spatial coverage
+
+# It would be better to make a tool that generates spatial precipitation from NEXRAD Doppler radar given a timeframe, region, and gauge measurements
+
+# Several open source libaries exist for weather radar processing, but to my knowledge not as an app
+
+# Goal of the project is to make a tool to extract gauge-corrected spatial precipitation estimates
+
+# Can also use in order to evaluate the accuracy of satellite radar products like GPM and gauge interpolation products like PRISM

@@ -1,0 +1,18 @@
+library(tidyverse)
+library(terra)
+library(here)
+
+r_dem <-
+    terra::rast(here("data",
+                     "raw",
+                     "nyc",
+                     "NYC_DEM_1ft_Int",
+                     "DEM_LiDAR_1ft_2010_Improved_NYC_int.tif")) %>%
+    aggregate(fact = 100)
+
+writeRaster(r_dem,
+            here("data",
+                 "processed",
+                 "dem",
+                 "nyc_dem_100ft.tif"),
+            overwrite = TRUE)

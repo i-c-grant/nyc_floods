@@ -1,0 +1,150 @@
+library(tidyverse)
+library(here)
+library(sf)
+library(janitor)
+library(mapview)
+library(spatstat)
+library(terra)
+library(lwgeom)
+
+source(here("src", "make_study_area.R"))
+
+r_slope <- terra::terrain(r_dem, v = "slope")
+
+fn_311_sept <- "flooding_catch_basin_sept_2023.csv"
+fn_311_all <- "311_dep_contains_flooding_all_dates.csv"
+
+sf_flood_calls_sept <-
+    read_csv(here("data",
+                  "raw",
+                  "311",
+                  fn_311_sept)) %>%
+    clean_names() %>%
+    filter(!is.na(latitude),
+           !is.na(longitude)) %>%
+    select(created_date,
+           agency,
+           complaint_type,
+           longitude,
+           latitude) %>%
+    distinct(longitude, latitude) %>%
+    st_as_sf(coords = c("longitude", "latitude"),
+             crs = 4326) %>%
+    st_transform(2263) %>%
+    st_filter(sf_study_area)
+
+sf_flood_calls_all <-
+    read_csv(here("data",
+                  "raw",
+                  "311",
+                  fn_311_all)) %>%
+    clean_names() %>%
+    filter(!is.na(latitude),
+           !is.na(longitude)) %>%
+    select(created_date,
+           agency,
+           complaint_type,
+           longitude,
+           latitude) %>%
+    distinct(longitude, latitude) %>%
+    st_as_sf(coords = c("longitude", "latitude"),
+             crs = 4326) %>%
+    st_transform(2263) %>%
+    st_filter(sf_study_area)
+    
+ppp_flood_calls_sept <-
+    spatstat.geom::ppp(x = st_coordinates(sf_flood_calls_sept)[, 1],
+                       y = st_coordinates(sf_flood_calls_sept)[, 2],
+                       window = as.owin(sf_study_area))
+
+ppp_flood_calls_all <-
+    spatstat.geom::ppp(x = st_coordinates(sf_flood_calls_all)[, 1],
+                       y = st_coordinates(sf_flood_calls_all)[, 2],
+                       window = as.owin(sf_study_area))    
+
+## calculate intensity
+intensity_flood_calls <- spatstat.geom::intensity(ppp_flood_calls)
+
+## visualize density
+density_flood_calls <- stats::density(ppp_flood_calls_all)
+plot(density_flood_calls)
+persp(density_flood_calls)
+contour(density_flood_calls)
+
+## adaptive intensity
+adaptive_flood_calls <- adaptive.density(ppp_flood_calls)
+
+## quadrat count
+quadrat_flood_calls <- spatstat.geom::quadratcount(ppp_flood_calls_all,
+                                                   nx = 10,
+                                                   ny = 10)
+
+## Ripley's K
+k_fit <- Kest(ppp_flood_calls, correction = "good")
+
+plot(k_fit)
+
+my_env <- envelope(ppp_flood_calls, Kest, nsim = 5)
+
+ppm_fit <- ppm(ppp_flood_calls)
+
+plot(simulate(ppm_fit))
+
+adaptive_flood_calls <- adaptive.density(ppp_flood_calls,
+                                         method = "voronoi")
+
+cut(r_dem, breaks = seq(0, 300, 50))
+
+im_elev <-
+    r_dem %>%
+    as.data.frame(xy = TRUE) %>%
+    select(1:3) %>%
+    as.im
+
+im_slope <-
+    r_slope %>%
+    as.data.frame(xy = TRUE) %>%
+    select(1:3) %>%
+    as.im
+    
+floods_elev_rhohat <- rhohat(ppp_flood_calls_all,
+                             im_elev)
+
+floods_slope_rhohat <- rhohat(ppp_flood_calls_all,
+                              im_slope)
+
+## cdf tests of slope and elevation
+cdf_elev <- cdf.test(ppp_flood_calls_all,
+                     im_elev)
+
+cdf_slope <- cdf.test(ppp_flood_calls_all,
+                      im_slope)
+
+## ppm by slope and elevation
+ppm_fit_bare <- ppm(ppp_flood_calls_all)
+
+ppm_fit_cov <- ppm(ppp_flood_calls_all ~ elev + slope,
+                   covariates = list(elev = im_elev,
+                                     slope = im_slope))
+
+lurking(ppm_fit_bare, covariate = im_slope)
+lurking(ppm_fit_cov, covariate = im_slope)
+
+lurking(ppm_fit_cov,
+        covariate = im_slope,
+        type = "raw",
+        cumulative = FALSE)
+
+lurking(ppm_fit_bare,
+        covariate = im_slope,
+        type = "raw",
+        cumulative = FALSE)
+
+diagnose.ppm(ppm_fit_cov)
+
+plot(ppp_flood_calls_all %mark% (nndist(ppp_flood_calls_all) / 2),
+     marksscale = 1,
+     main = "Steinen diagram")
+
+## empty space function
+fest_flood_all <- Fest(ppp_flood_calls_all)

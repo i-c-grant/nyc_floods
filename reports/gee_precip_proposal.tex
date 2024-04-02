@@ -1,0 +1,100 @@
+% Created 2024-03-06 Wed 16:47
+% Intended LaTeX compiler: pdflatex
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{capt-of}
+\usepackage{hyperref}
+\author{Ian Grant}
+\date{\today}
+\title{Automated gauge-corrected spatial precipitation maps for urban flood analysis}
+\hypersetup{
+ pdfauthor={Ian Grant},
+ pdftitle={Automated gauge-corrected spatial precipitation maps for urban flood analysis},
+ pdfkeywords={},
+ pdfsubject={},
+ pdfcreator={Emacs 29.0.92 (Org mode 9.6.6)}, 
+ pdflang={English}}
+\makeatletter
+\newcommand{\citeprocitem}[2]{\hyper@linkstart{cite}{citeproc_bib_item_#1}#2\hyper@linkend}
+\makeatother
+
+\usepackage[notquote]{hanging}
+\begin{document}
+
+\maketitle
+Pluvial (rain-based) flooding represents a costly hazard for cities around the world, especially as climate change causes more intense rainfall and urbanization increases impervious areas (\citeprocitem{8}{Galloway et al. 2018}; \citeprocitem{9}{Hammond et al. 2015}; \citeprocitem{5}{Doocy et al. 2013}). Since pluvial flooding is driven mainly by intense precipitation rather than inundation from overflowing rivers or coastal storms, it is difficult to assess which urban areas are most vulnerable to pluvial floods. Relatively minor but frequent "nuisance" flooding is particularly difficult to predict but has significant economic and health impacts (\citeprocitem{4}{Cherqui et al. 2015}; \citeprocitem{2}{Baah et al. 2015}). This uncertainty represents a challenge for adaptation efforts, which often must make decisions about infrastructure deployment without a full picture of pluvial flood risk's spatial distribution (\citeprocitem{4}{Cherqui et al. 2015}; \citeprocitem{25}{Zhou et al. 2012}; \citeprocitem{26}{Zhou et al. 2017}). While hydrological models (\citeprocitem{1}{Al-Suhili, Cullen, and Khanbilvardi 2019}) and remote sensing techniques (\citeprocitem{18}{Refice, D’Addabbo, and Capolongo 2018}) can contribute to models of pluvial urban flooding, both techniques are hampered by the physical complexity of the urban environment. In particular, flood mapping by synthetic aperture radar must contend with complex scattering effects due to buildings and fragmented urban land cover, while hydrological models of rain-driven floods rely on information about cities' drainage and sewage systems that is often unavailable.
+
+Models of urban flooding can compensate for these challenges by leveraging other data sources that are available in urban areas. Indeed, large cities often provide rich datasets base on citizen reports and ground-based sensors. For example, New York City (NYC) maintains a publicly available, spatially explicit database of 311 requests (the system by which citizens make requests for municipal services), and this dataset includes over 150,000 geolocated reports of flooding (\url{https://data.cityofnewyork.us/Social-Services/311-Service-Requests-from-2010-to-Present/erm2-nwe9/about\_data}). In addition, NYC has a dense network of 22 weather stations that include rain gauges (\url{https://www.nysmesonet.org/networks/nyc}), which provide accurate measurements of precipitation at high temporal resolution. Smith and Rodriguez (\citeprocitem{20}{2017}) demonstrated the combined potential of these datasets. The authors used rain gauge measurements to calibrate a weather-radar-based spatial precipitation dataset for NYC based on weather radar, then used this precipitation dataset to analyze 311 complaints aggregated over time. They found interesting effects of terrain and seasonality on pluvial flooding, demonstrating the utility of this modelling approach. Moreover, statistical techniques such as spatiotemporal point pattern analysis (\citeprocitem{7}{Gabriel 2017}) could extend their analysis by explicitly incorporating the fine-grained temporal information present in both the citizen complaints and the precipitation data, potentially allowing the calculation of local critical rainfall thresholds for pluvial floods in NYC and in other cities (\citeprocitem{24}{Yang et al. 2016}; \citeprocitem{22}{Tian et al. 2019}).
+
+Unfortunately, replicating or extending the analysis of Smith and Rodriguez (\citeprocitem{20}{2017}) requires regenerating their spatial precipitation maps for the seven-year period since the study was published. In fact, this obstacle represents a persistent problem in urban flood studies: researchers periodically publish datasets for a single city or time period in order to facilitate hydrological analyses (e.g. \citeprocitem{23}{Wright et al. 2014}), but these datasets quickly become obsolete. Nevertheless, generating precipitation intensity maps from weather radar requires significant expertise. For example, in their processing of NEXRAD Doppler radar (\citeprocitem{10}{Heiss, McGrew, and Sirmans 1990}), Smith and Rodriguez (\citeprocitem{20}{2017}) applied algorithms from the Hydro-NEXRAD software project (\citeprocitem{19}{Seo et al. 2011}) to account for numerous sources of error and to correct radar estimates with weather station rain gauges. Applying such radar-processing algorithms requires expertise in radar that goes significantly beyond the realm of most urban flood studies. Given the increasing importance of radar-based precipitation data in urban hydrology (\citeprocitem{21}{Thorndahl et al. 2017}), weather radar processing represents a significant barrier to urban hydrology.
+
+This challenge has been partially addressed by efforts to develop open-source software tools for radar processing (\citeprocitem{11}{Heistermann et al. 2015}). These tools encapsulate many of the key algorithms in the literature so that practitioners do not need to re-implement them for every application. The most prominent open-source packages for weather radar processing are all Python-based. Py-ART is a Python package originally designed for the US Department of Energy's Atmospheric Radiation Measurement Climate Research Facility but which has since seen widespread adoption for research (\citeprocitem{13}{Helmus and Collis 2016}).  Pyrad built on Py-ART to enable real-time processing of weather radar (\citeprocitem{6}{Figueras I Ventura et al. 2020}). In contrast, wradlib was developed with a research rather than operational context and focuses in particular on hydrological applications (\citeprocitem{12}{Heistermann, Jacobi, and Pfaff 2013}). Finally, the recent package radproc (\citeprocitem{14}{Kreklow 2019}) sought to adapt similar functionality for compatibility with ArcGIS's Python interface.
+
+Despite this robust open-source ecosystem of tools for processing weather radar, deploying any of of these packages requires expertise in both radar processing and application development; to the best of my knowledge, no available package offers an application-like interface for generating spatial precipitation intensity maps. However, the latter is precisely what is required for a long-term solution to the scarcity of spatial precipitation datasets: users should have access to a simple interface that fetches the relevant radar data from online repositories, accepts user-provided gauge measurements as CSV files, allows the selection of preferred processing methods, and then outputs precipitation intensity maps. 
+
+In this project, I aim to produce such an application using the open-source libraries described above. I will then use the application to produce an updated database of spatial precipitation maps in New York City. This precipitation database will allow the exploration of several research questions. First, it will be interesting to compare the database to satellite products such as IMERG and gauge interpolation products such as PRISM. Second, the database could be used to study the effect of the urban environment on precipitation (\citeprocitem{15}{Liu and Niyogi 2019}). Third, the dataset could be used to study the effect of the temporal and spatial heterogeneity of precipitation on hydrological response, which has so far been studied mainly through simulation rather than empirical data (\citeprocitem{3}{Chen et al. 2022}; \citeprocitem{17}{Peleg et al. 2017}; \citeprocitem{16}{Lyu et al. 2018}). Finally, I will use the precipitation dataset in an analysis of the 311 complaint dataset.
+
+\newpage
+
+\begin{hangparas}{1.5em}{1}
+\hypertarget{citeproc_bib_item_1}{Al-Suhili, Rafea, Cheila Cullen, and Reza Khanbilvardi. 2019. “An Urban Flash Flood Alert Tool for Megacities—Application for Manhattan, New York City, USA.” \textit{Hydrology} 6 (2): 56. \url{https://doi.org/10.3390/hydrology6020056}.}
+
+\hypertarget{citeproc_bib_item_2}{Baah, Kelly, Brajesh Dubey, Richard Harvey, and Edward McBean. 2015. “A Risk-Based Approach to Sanitary Sewer Pipe Asset Management.” \textit{Science of the Total Environment} 505 (February): 1011–17. \url{https://doi.org/10.1016/j.scitotenv.2014.10.040}.}
+
+\hypertarget{citeproc_bib_item_3}{Chen, Guangzhao, Jingming Hou, Tian Wang, Jiahao Lv, Jing Jing, Xin Ma, Shaoxiong Yang, Chaoxian Deng, Yue Ma, and Guoqiang Ji. 2022. “The Effect of Spatial–Temporal Characteristics of Rainfall on Urban Inundation Processes.” \textit{Hydrological Processes} 36 (8).}
+
+\hypertarget{citeproc_bib_item_4}{Cherqui, Frédéric, Ali Belmeziti, Damien Granger, Antoine Sourdril, and Pascal Le Gauffre. 2015. “Assessing Urban Potential Flooding Risk and Identifying Effective Risk-Reduction Measures.” \textit{Science of the Total Environment} 514 (May): 418–25. \url{https://doi.org/10.1016/j.scitotenv.2015.02.027}.}
+
+\hypertarget{citeproc_bib_item_5}{Doocy, Shannon, Amy Daniels, Sarah Murray, and Thomas D. Kirsch. 2013. “The Human Impact of Floods: A Historical Review of Events 1980-2009 and Systematic Literature Review.” \textit{Plos Currents}. \url{https://doi.org/10.1371/currents.dis.f4deb457904936b07c09daa98ee8171a}.}
+
+\hypertarget{citeproc_bib_item_6}{Figueras I Ventura, Jordi, Martin Lainer, Zaira Schauwecker, Jacopo Grazioli, and Urs Germann. 2020. “Pyrad: A Real-Time Weather Radar Data Processing Framework Based on Py-ART.” \textit{Journal of Open Research Software} 8 (1): 28. \url{https://doi.org/10.5334/jors.330}.}
+
+\hypertarget{citeproc_bib_item_7}{Gabriel, Edith. 2017. “Spatiotemporal Point Pattern Analysis and Modeling.” In \textit{Encyclopedia of GIS}, edited by Shashi Shekhar, Hui Xiong, and Xun Zhou, 2161–68. Cham: Springer International Publishing. \url{https://doi.org/10.1007/978-3-319-17885-1_1646}.}
+
+\hypertarget{citeproc_bib_item_8}{Galloway, Gerald, Allison Reilly, Sung Ryoo, Anjanette Riley, Maggie Haslam, Sam Brody, Wesley Highfeld, Joshua Gunn, Jayton Rainey, and Sherry Parker. 2018. “The Growing Threat of Urban Flooding: A National Challenge.”}
+
+\hypertarget{citeproc_bib_item_9}{Hammond, M.J., A.S. Chen, S. Djordjević, D. Butler, and O. Mark. 2015. “Urban Flood Impact Assessment: A State-of-the-Art Review.” \textit{Urban Water Journal} 12 (1): 14–29. \url{https://doi.org/10.1080/1573062X.2013.857421}.}
+
+\hypertarget{citeproc_bib_item_10}{Heiss, William H, David L McGrew, and Dale Sirmans. 1990. “Nexrad - Next Generation Weather Radar (WSR-88D).” \textit{Microwave Journal (International Ed.)} 33 (1): 79–100.}
+
+\hypertarget{citeproc_bib_item_11}{Heistermann, M., S. Collis, M. J. Dixon, S. Giangrande, J. J. Helmus, B. Kelley, J. Koistinen, et al. 2015. “The Emergence of Open-Source Software for the Weather Radar Community.” \textit{Bulletin of the American Meteorological Society} 96 (1): 117–28. \url{https://doi.org/10.1175/BAMS-D-13-00240.1}.}
+
+\hypertarget{citeproc_bib_item_12}{Heistermann, M., S. Jacobi, and T. Pfaff. 2013. “Technical Note: An Open Source Library for Processing Weather Radar Data (<I>Wradlib</I>).” \textit{Hydrology and Earth System Sciences} 17 (2): 863–71. \url{https://doi.org/10.5194/hess-17-863-2013}.}
+
+\hypertarget{citeproc_bib_item_13}{Helmus, Jonathan J, and Scott M Collis. 2016. “The Python ARM Radar Toolkit (Py-ART), a Library for Working with Weather Radar Data in the Python Programming Language.” \textit{Journal of Open Research Software} 4 (1): 25. \url{https://doi.org/10.5334/jors.119}.}
+
+\hypertarget{citeproc_bib_item_14}{Kreklow, Jennifer. 2019. “Facilitating Radar Precipitation Data Processing, Assessment and Analysis: A GIS-Compatible Python Approach.” \textit{Journal of Hydroinformatics} 21 (4): 652–70. \url{https://doi.org/10.2166/hydro.2019.048}.}
+
+\hypertarget{citeproc_bib_item_15}{Liu, Jie, and Dev Niyogi. 2019. “Meta-Analysis of Urbanization Impact on Rainfall Modification.” \textit{Scientific Reports} 9 (1): 7301–.}
+
+\hypertarget{citeproc_bib_item_16}{Lyu, Heng, Guangheng Ni, Xuejian Cao, Yu Ma, and Fuqiang Tian. 2018. “Effect of Temporal Resolution of Rainfall on Simulation of Urban Flood Processes.” \textit{Water (Basel)} 10 (7): 880–.}
+
+\hypertarget{citeproc_bib_item_17}{Peleg, Nadav, Frank Blumensaat, Peter Molnar, Simone Fatichi, and Paolo Burlando. 2017. “Partitioning the Impacts of Spatial and Climatological Rainfall Variability in Urban Drainage Modeling.” \textit{Hydrology and Earth System Sciences} 21 (3): 1559–72.}
+
+\hypertarget{citeproc_bib_item_18}{Refice, Alberto., Annarita. D’Addabbo, and Domenico. Capolongo. 2018. \textit{Flood Monitoring through Remote Sensing}. 1st ed. 2018. Springer Remote Sensing/Photogrammetry. Cham: Springer International Publishing. \url{https://doi.org/10.1007/978-3-319-63959-8}.}
+
+\hypertarget{citeproc_bib_item_19}{Seo, Bong-Chul, Witold F. Krajewski, Anton Kruger, Piotr Domaszczynski, James A. Smith, and Matthias Steiner. 2011. “Radar-Rainfall Estimation Algorithms of Hydro-NEXRAD.” \textit{Journal of Hydroinformatics} 13 (2): 277–91. \url{https://doi.org/10.2166/hydro.2010.003}.}
+
+\hypertarget{citeproc_bib_item_20}{Smith, Brianne, and Stephanie Rodriguez. 2017. “Spatial Analysis of High-Resolution Radar Rainfall and Citizen-Reported Flash Flood Data in Ultra-Urban New York City.” \textit{Water} 9 (10): 736. \url{https://doi.org/10.3390/w9100736}.}
+
+\hypertarget{citeproc_bib_item_21}{Thorndahl, Søren, Thomas Einfalt, Patrick Willems, Jesper EllerbÃ¦k Nielsen, Marie-Claire ten Veldhuis, Karsten Arnbjerg-Nielsen, Michael R Rasmussen, and Peter Molnar. 2017. “Weather Radar Rainfall Data in Urban Hydrology.” \textit{Hydrology and Earth System Sciences} 21 (3): 1359–80.}
+
+\hypertarget{citeproc_bib_item_22}{Tian, Xin, Marie-claire ten Veldhuis, Marc Schleiss, Christian Bouwens, and Nick van de Giesen. 2019. “Critical Rainfall Thresholds for Urban Pluvial Flooding Inferred from Citizen Observations.” \textit{The Science of the Total Environment} 689: 258–68.}
+
+\hypertarget{citeproc_bib_item_23}{Wright, Daniel B., James A. Smith, Gabriele Villarini, and Mary Lynn Baeck. 2014. “Long‐Term High‐Resolution Radar Rainfall Fields for Urban Hydrology.” \textit{Jawra Journal of the American Water Resources Association} 50 (3): 713–34. \url{https://doi.org/10.1111/jawr.12139}.}
+
+\hypertarget{citeproc_bib_item_24}{Yang, Long, James A. Smith, Mary Lynn Baeck, and Yan Zhang. 2016. “Flash Flooding in Small Urban Watersheds: Storm Event Hydrologic Response.” \textit{Water Resources Research} 52 (6): 4571–89.}
+
+\hypertarget{citeproc_bib_item_25}{Zhou, Q., P.S. Mikkelsen, K. Halsnæs, and K. Arnbjerg-Nielsen. 2012. “Framework for Economic Pluvial Flood Risk Assessment Considering Climate Change Effects and Adaptation Benefits.” \textit{Journal of Hydrology} 414-415 (January): 539–49. \url{https://doi.org/10.1016/j.jhydrol.2011.11.031}.}
+
+\hypertarget{citeproc_bib_item_26}{Zhou, Zhengzheng, James A. Smith, Long Yang, Mary Lynn Baeck, Molly Chaney, Ten Veldhuis Marie‐Claire, Huiping Deng, and Shuguang Liu. 2017. “The Complexities of Urban Flood Response: Flood Frequency Analyses for the Charlotte Metropolitan Region.” \textit{Water Resources Research} 53 (8): 7401–25.}\bigskip
+\end{hangparas}
+\end{document}
