@@ -1,0 +1,113 @@
+library(ggplot2)
+library(tidyverse)
+library(RColorBrewer)
+library(cowplot)
+
+
+load_nyc_boundary_layer <- function(line_color = "white") {
+  geom_sf(data = load_nyc_boundary(),
+          aes(x = NULL,
+              y = NULL),
+          fill = NA,
+          color = line_color)
+}
+
+plot_timeline <- function(df,
+                          start_date,
+                          end_date,
+                          aggregate_descriptors = TRUE,
+                          ymax = 4000) {
+
+  if (aggregate_descriptors) {
+    df <-
+      df %>%
+      group_by(created_date) %>%
+      summarise(n_calls = sum(n_calls),
+                precip_in = first(precip_in))
+
+    call_line <- geom_line(aes(y = n_calls),
+                           color = "red",
+                           alpha = 1,
+                           linewidth = .75)
+  }
+   
+  else {
+    call_line <- geom_line(
+      aes(y = n_calls,
+          color = descriptor),
+    alpha = 1,
+    linewidth = .75)
+  }
+
+  ## Set scale factor for scaling between two y-axes
+  scale_factor <- 500
+  precip_line <-
+    geom_line(aes(y = precip_in * scale_factor),
+              color = "blue",
+              alpha = 1/4,
+              linewidth = 1.5)
+  
+  p_timeline <- df %>%
+    filter(created_date > start_date,
+           created_date < end_date) %>%
+    ggplot(aes(x = created_date)) +
+    call_line +
+    precip_line +
+    labs(title = year(start_date), 
+         x = "Date",
+         y = "Number of calls") +
+    scale_y_continuous(name = "Number of calls",
+                       sec.axis = sec_axis(~. / scale_factor, name = "Precipitation (in)"),
+                       limits = c(0, ymax)) +
+    theme_classic()
+
+  return(p_timeline)
+}
+
+plot_daily_complaint_maps <- function(df,
+                                      title = "Precipitation-responsive 311 calls") {
+
+  nyc_boundary <- load_nyc_boundary()
+
+  df_daily <-
+    df %>%
+    group_by(created_date) %>%
+    summarise(total_daily_calls = n(),
+              precip_in = mean(precip_in)) %>%
+    ungroup()
+
+  p_map <- 
+    df %>%
+    group_by(created_date) %>%
+    mutate(total_n_calls = n()) %>%
+    ungroup() %>%
+    ggplot() +
+    geom_sf(size = .25,
+            alpha = .9,
+            aes(color = descriptor)) +
+    facet_wrap(vars(created_date)) +
+    labs(title = "311 calls on days with precip. > 2 in") +
+    geom_sf(data = nyc_boundary, fill = NA, color = "black", size = 1) +
+    ## add labels with daily total calls and precip
+    geom_text(data = df_daily,
+              aes(x = -74.25,
+                  y = 40.85,
+                  label = paste(total_daily_calls,
+                                "calls\n",
+                                round(precip_in, 2),
+                                " in")),
+              size = 2.5,
+              color = "black",
+              hjust = 0,
+              vjust = 1) +
+    theme_classic() +
+    theme(axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks = element_blank(),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          legend.position = "bottom",
+          legend.direction = "vertical")
+
+  return(p_map)
+}

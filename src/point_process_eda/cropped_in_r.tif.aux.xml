@@ -1,0 +1,12 @@
+<PAMDataset>
+  <PAMRasterBand band="1">
+    <Description>SFC=Ground or water surface; 01 hr Total precipitation [kg/(m^2)]</Description>
+    <Metadata>
+      <MDI key="STATISTICS_MAXIMUM">1.9473778009415</MDI>
+      <MDI key="STATISTICS_MEAN">0.27134527308839</MDI>
+      <MDI key="STATISTICS_MINIMUM">0</MDI>
+      <MDI key="STATISTICS_STDDEV">0.4223257649294</MDI>
+      <MDI key="STATISTICS_VALID_PERCENT">100</MDI>
+    </Metadata>
+  </PAMRasterBand>
+</PAMDataset>

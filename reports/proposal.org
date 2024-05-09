@@ -1,0 +1,53 @@
+#+LATEX_HEADER: \usepackage[margin=2cm]{geometry}
+#+OPTIONS: toc:nil
+#+TITLE: Spatiotemporal model of flooding-related 311 calls in New York City
+#+AUTHOR: Ian Grant
+
+* Introduction
+Pluvial flooding is an increasingly disruptive problem in New York City given increased precipitation due to climate change. Understanding where and when flooding takes place is necessary in order to identify vulnerable areas and assess the efficacy of adaptations. However, urban flood modelling (e.g. with hydrology models) and detection (e.g. with synthetic aperture radar) are both hindered by the physical complexity of the urban environment. An alternative approach to detecting and characterizing floods is to use the rich social and administrative datasets that cities are uniquely able to provide. In this project, I propose to develop a statistical model of New York City's dataset of 311 requests for service in order to better understand the spatiotemporal patterns of flooding in the city.
+
+#+NAME: fig:conceptual_model
+#+CAPTION: Conceptual model of flood-related 311 service requests. Meteorological factors (green) are mediated by terrain and infrastructure (purple) to produce flooding (blue). 311 requests are produced by residents' choice to report flooding (orange); some flooding may go unreported, and some requests may not reflect flooding (gray). 
+[[file:flooding_proposal_conceptual_model.png]]
+
+* Statistical approaches
+This statistical analysis could take several possible forms, ordered
+here by increasing complexity.
+
+** Spatiotemporal point pattern analysis
+The simplest approach would be to treat the 311 requests as a spatiotemporal point pattern. Understanding the degree of spatial and temporal autocorrelation in the dataset would already provide useful information about the scale and duration of the physical processes driving the 311 requests. Similarly, a spatiotemporal clustering approach could be useful for distinguishing flood-driven requests from one-off calls.
+
+** Spatiotemporal point process model
+An intermediate version of the project could model the calls using a
+point process model. Predictor variables could include what we know of
+sewer infrastructure, precipitation from MicroNet station or remote
+sensing data, and FloodNet sensing data.
+
+** Statistical analysis of infrastructure improvements
+The most complex version of the model could attempt to detect a statistical relationship between the Department of Environmental Protection's (DEP) green infrastructure projects and the local prevalence of 311 requests, controlling for all the factors included in the point process model.
+
+* Scope and scale
+A forthcoming analysis by Eric Sanderson (New York Botanical Garden)
+suggests that Brooklyn and Queens are the most vulnerable boroughs to
+flooding in general. To simply the present project, I will restrict the spatial scope to these boroughs, expanding it to the full city only if the Brooklyn and Queens version is successful. I will attempt to use the full length of the 311 record in the analysis, but I will initially focus on a few notable instances of pluvial flooding as exploratory test cases.
+
+* Data
+** 311 requests for service
+This dataset goes back to 2010 and contains roughly 35 million requests for service. Each request is geolocated and includes the precise time the request was made. The requests also include descriptions that indicate why the requests were made. An initial query suggests that the dataset includes approximately 150,000 flooding-related requests since 2010.
+
+** DEM
+I will use the city's lidar-based DEM to derive relevant features of the terrain, such as slope and elevation.
+
+** Meteorological data
+I will use data from the city's MicroNet system of weather stations for real-time precipitation data. It may also be possible to obtain more fine-grained precipitation data from remote sensing products.
+
+** Permeability
+In order to measure permeability, I will use the data produced by the DEP's parcel-based study of ground permeability.
+
+** FloodNet
+The city has a relatively new network of ground-based inundation sensors. This would be useful for exploring the statistical relationship between 311 calls and physical inundation. I am discussing access to this data with the project lead at Brooklyn College. 
+
+** DEP green infrastructure
+I will use the DEP's publicly available database of green
+infrastructure projects, some of which are intended to mitigate
+flooding.

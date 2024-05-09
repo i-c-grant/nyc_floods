@@ -1,0 +1,101 @@
+## Histogram of daily precipitation
+df_daily_precip_calls_only %>%
+  group_by(created_date) %>%
+  summarise(precip_in = first(precip_in)) %>%
+  ggplot(aes(x = precip_in)) +
+  geom_histogram(bins = 30) +
+  labs(title = "Histogram of daily precipitation",
+       x = "Precipitation (in)",
+       y = "Number of days") +
+  theme_minimal()
+
+start_date <- "2020-01-01"
+end_date <- "2021-01-01"
+
+## Line graph of daily precipitation
+p_daily_precip <-
+  df_central_park_precip %>%
+  filter(date > start_date,
+         date < end_date) %>%
+  ggplot(aes(x = date,
+             y = precip)) +
+  geom_point()
+
+## Line graph of daily calls and precipitation
+p_daily_calls <-
+  df_daily_precip_calls_only %>%
+  group_by(created_date) %>%
+  summarise(n_calls = sum(n_calls),
+            precip_in = first(precip_in)) %>%
+  filter(created_date > start_date,
+         created_date < end_date) %>%
+  ggplot(aes(x = created_date)) +
+  geom_line(aes(y = precip_in * 500),
+            color = "blue",
+            alpha = .5) +
+  geom_line(aes(y = n_calls), color = "red") +
+  labs(title = "Number of sewer calls by date",
+       x = "Date",
+       y = "Number of calls") +
+  scale_y_continuous(name = "Number of calls",
+                     sec.axis = sec_axis(~. / 500, name = "Precipitation (in)")) +
+  theme_minimal()
+
+plot_timeline <- function(df,
+                          start_date,
+                          end_date,
+                          ymax = 4000) {
+
+  ## Set scale factor for scaling between two y-axes
+  scale_factor <- 500
+
+  df %>%
+  group_by(created_date) %>%
+  summarise(n_calls = sum(n_calls),
+            precip_in = first(precip_in)) %>%
+    filter(created_date > start_date,
+           created_date < end_date) %>%
+    ggplot(aes(x = created_date)) +
+    geom_line(aes(y = precip_in * scale_factor),
+              color = "blue",
+              alpha = 1/4,
+              linewidth = 1.5) +
+    geom_line(aes(y = n_calls),
+              color = "red",
+              alpha = 1,
+              linewidth = .75) +
+    labs(title = year(start_date),
+         x = "Date",
+         y = "Number of calls") +
+    scale_y_continuous(name = "Number of calls",
+                       sec.axis = sec_axis(~. / scale_factor, name = "Precipitation (in)"),
+                       limits = c(0, ymax)) 
+    ## theme_classic()
+}
+
+## Plot timelines for each year from 2010 to 2024
+## using map
+years <- 2010:2024
+
+plots <- map(years,
+             ~plot_timeline(df = df_daily_precip_calls_only,
+                            start_date = paste0(.x, "-01-01"),
+                            end_date = paste0(.x + 1, "-01-01"),
+                            ymax = 4000))
+
+## Save each plot to a file
+map2(plots, years,
+     ~ggsave(here("reports",
+                  "figures",
+                  "eda",
+                  paste0("timeline_", .y, ".png")),
+             plot = .x,
+             width = 10,
+             height = 6))
+
+plots[[1]]
+plot_grid(plots[[1]], plots[[2]], ncol = 1)
+plot_grid(plots[[4]], plots[[5]], plots[[6]], ncol = 1)
+plot_grid(plots[[7]], plots[[8]], plots[[9]], ncol = 1)
+plot_grid(plots[[10]], plots[[11]], plots[[12]], ncol = 1)
+plot_grid(plots[[13]], plots[[14]], plots[[15]], ncol = 1)

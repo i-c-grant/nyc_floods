@@ -1,0 +1,8 @@
+Daily precipitation in inches at Central Park station (provided by NOAA GHCND) vs. total daily 311 calls to the DEP in the following categories (which are responsive to overall levels of precipitation):
+
+- "Catch Basin Clogged/Flooding (Use Comments) (SC)"
+- "Street Flooding (SJ)",
+- "Sewer Backup (Use Comments) (SA)",
+- "Culvert Blocked/Needs Cleaning (SE)",
+- "Manhole Overflow (Use Comments) (SA1)")
+

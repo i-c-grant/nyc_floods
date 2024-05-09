@@ -168,7 +168,7 @@ with rasterio.open(
     width=width,
     count=1,
     dtype=da.values.dtype,
-    crs='EPSG:2263',
+    crs='EPSG:32618',
     transform=transform,
 ) as dst:
     # Write the reflectivity data to the GeoTIFF

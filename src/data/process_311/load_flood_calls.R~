@@ -1,0 +1,125 @@
+flood_descriptors <-
+  read_csv(here("data", "interim", "unique_sewer_descriptors.csv")) %>%
+  ## filter(flood_related) %>%
+  pull(descriptor)
+
+sf_sewer_calls <-
+  read_csv(here("data",
+                "raw",
+                "311",
+                "dep_all_sewer_20240425.csv")) %>%
+  clean_names() %>%
+  filter(descriptor %in% flood_descriptors,
+         !is.na(descriptor),
+         !is.na(latitude),
+          !is.na(longitude)) %>%
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>%
+  ## parse created_date on the following format: 04/23/2024
+  mutate(created_date = as.Date(created_date, format = "%m/%d/%Y"))
+
+df_central_park_precip <- read_csv(here("data",
+                                        "processed",
+                                        "central_park_precip.csv"))
+
+df_sewer_calls_precip <-
+  sf_sewer_calls %>%
+  as_tibble() %>%
+  left_join(df_central_park_precip, by = c("created_date" = "date")) %>%
+  mutate(precip_mm = precip * .1,
+         precip_in = precip_mm * 0.03937008)
+
+df_sewer_calls_daily <-
+  df_sewer_calls_precip %>%
+  group_by(created_date, descriptor) %>%
+  summarise(n_calls = n(),
+            precip_in = first(precip_in))
+
+## Scatterplots of precip.-responsive calls vs. precipitation
+df_sewer_calls_daily %>%
+  filter(descriptor %in% c("Catch Basin Clogged/Flooding (Use Comments) (SC)",
+                           "Street Flooding (SJ)",
+                           "Sewer Backup (Use Comments) (SA)")) %>%
+  ggplot(aes(x = log10(precip_in),
+             y = n_calls)) +
+  geom_point(alpha = .25) +
+  ## geom_smooth(method = "lm") +
+  ## geom_smooth(method = "loess") +
+  theme_minimal() +
+  ylim(0, 500) +
+  facet_wrap(~descriptor, scales = "free_y") +
+  labs(x = "Log10 Precipitation (inches)",
+       y = "Number of Calls",
+       title = "Number of Sewer Calls vs. Precipitation",
+       subtitle = "Daily data from 2010 to 2024") +
+  scale_x_continuous(breaks = c(-2, -1, 0, 1),
+                      labels = c("0.01", "0.1", "1", "10"))
+
+## plot bar chart for each 
+sf_sewer_calls <-
+  sf_sewer_calls %>%
+  mutate(precip_bin = cut(precip_in,
+                          breaks = seq(0,
+                                       max(precip_in, na.rm = TRUE),
+                                       by = 1), include.lowest = TRUE,
+                          right = FALSE))
+
+# Count the number of cases in each precipitation bin
+bin_counts <- sf_sewer_calls %>%
+  group_by(precip_bin, descriptor) %>%
+  summarise(count = n()) %>%
+  ungroup()
+
+# Create the bar chart
+ggplot(bin_counts, aes(x = precip_bin, y = count)) +
+  geom_boxplot()
+
+## three descriptors show a response
+precip_descriptors <-
+  c(catch_basin_clogged = "Catch Basin Clogged/Flooding (Use Comments) (SC)",
+  street_flooding = "Street Flooding (SJ)",
+  sewer_backup = "Sewer Backup (Use Comments) (SA)")
+
+sf_sewer_precip <-
+  sf_sewer %>%
+  as_tibble() %>%
+  filter(descriptor %in% precip_descriptors)
+
+sf_sewer_precip_summary <-
+  sf_sewer_precip %>%
+  group_by(created_date) %>%
+  summarise(n_complaints = n(),
+            precip = first(precip))
+
+sf_sewer_precip_summary %>%
+  ggplot(aes(x = precip, y = n_complaints)) +
+  geom_point(alpha = .1) +
+  geom_smooth(method = "lm") +
+  geom_smooth(method = "loess", color = "red") +
+  theme_minimal() +
+  xlim(c(100, 2000))
+
+sf_sewer_precip_summary_high <- 
+  sf_sewer_precip_summary %>%
+  filter(precip > 100) 
+
+## sf_sewer_precip_summary_high %>%
+sf_sewer_precip_summary %>%
+  filter(n_complaints < 3000) %>%
+  lm(n_complaints ~ precip, data = .) %>%
+  summary
+
+## histogram of number of complaints per day
+sf_sewer_calls %>%
+  as_tibble() %>%
+  group_by(created_date) %>%
+  summarise(n = n(),
+            precip = first(precip)) %>%
+  ggplot() + 
+  geom_histogram(aes(x = n), binwidth = 10) +
+  xlim(c(0, 500)) +
+  theme_minimal()
+
+## write flood calls to gpkg
+sf_sewer %>%
+  st_write(here("data", "processed", "flood_calls.gpkg"),
+           driver = "GPKG")

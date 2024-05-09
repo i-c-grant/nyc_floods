@@ -1,0 +1,13 @@
+
+
+## Histogram of daily precipitation
+df_daily_precip_calls_only %>%
+  group_by(created_date) %>%
+  summarise(precip_in = first(precip_in)) %>%
+  ggplot(aes(x = precip_in)) +
+  geom_histogram(bins = 30) +
+  labs(title = "Histogram of daily precipitation",
+       x = "Precipitation (in)",
+       y = "Number of days") +
+  theme_minimal()
+

@@ -1,0 +1,140 @@
+library(tidyverse)
+library(here)
+library(sf)
+library(janitor)
+
+## Load 311 data
+df_sewer_calls <- 
+  read_csv(here("data",
+                "raw",
+                "311",
+                "dep_all_sewer_20240425.csv")) %>%
+  clean_names() %>%
+  filter(descriptor %in% flood_descriptors,
+         !is.na(descriptor),
+         !is.na(latitude),
+         !is.na(longitude)) %>%
+  ## parse created_date on the following format: 04/23/2024
+  ## need to change to include time
+  mutate(created_date = as.Datetime(created_date, format = "%m/%d/%Y"))
+  
+
+## Join with Central Park daily precipitation from GHCND
+df_central_park_precip <- read_csv(here("data",
+                                        "processed",
+                                        "central_park_precip.csv"))
+
+df_sewer_calls_with_cp_precip <-
+  df_sewer_calls %>%
+  left_join(df_central_park_precip, by = c("created_date" = "date")) %>%
+  mutate(precip_mm = precip * .1,
+         precip_in = precip_mm * 0.03937008)
+
+## Plot number of calls by precipitation for each call descriptor
+df_sewer_calls_daily %>%
+  ggplot(aes(x = precip_in, y = n_calls, color = descriptor)) +
+  geom_point() +
+  geom_smooth(method = "loess") +
+  labs(title = "Number of sewer calls by precipitation",
+       x = "Precipitation (in)",
+       y = "Number of calls") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+## Same but facetted
+p_descriptors <- 
+  df_sewer_calls_daily %>%
+  filter(total_calls_with_desc > 1000) %>%
+  ggplot(aes(x = precip_in,
+             y = n_calls)) +
+  geom_point(alpha = .25) +
+  geom_smooth(method = "loess") +
+  labs(title = "Percentage of sewer calls by precipitation",
+       x = "Precipitation (in)",
+       y = "Percentage of calls") +
+  theme_classic() +
+  theme(legend.position = "bottom") +
+  facet_wrap(~descriptor, scales = "free_y")
+
+ggsave(here("reports",
+            "figures",
+            "call_descriptor_precip_response.png"),
+       p_descriptors,
+       width = 10,
+       height = 10,
+       dpi = 600)
+
+## Facet and log
+df_sewer_calls_daily %>%
+  filter(total_calls_with_desc > 1000) %>%
+  ggplot(aes(x = precip_in,
+             y = n_calls)) +
+  geom_point(alpha = .25) +
+  geom_smooth(method = "loess") +
+  labs(title = "Percentage of sewer calls by precipitation",
+       x = "Precipitation (in)",
+       y = "Percentage of calls") +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  facet_wrap(~descriptor, scales = "free_y") +
+  scale_x_log10()
+
+## Facet and log, at least 1 inch of rain
+df_sewer_calls_daily %>%
+  filter(total_calls_with_desc > 1000,
+         precip_in > 1) %>%
+  ggplot(aes(x = precip_in,
+             y = n_calls)) +
+  geom_point(aes(color = created_date)) +
+  geom_smooth(method = "lm") +
+  geom_smooth(method = "loess",
+              color = "red") +
+  labs(title = "Percentage of sewer calls by precipitation",
+       x = "Precipitation (in)",
+       y = "Percentage of calls") +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  facet_wrap(~descriptor, scales = "free_y") +
+  ## scale_x_log10() +
+  scale_color_viridis_c()
+  geom_text(aes(label = created_date), nudge_y = 1)
+
+## Select descriptors that are responsive to precipitation
+precip_descriptors <-
+  c("Catch Basin Clogged/Flooding (Use Comments) (SC)",
+    "Street Flooding (SJ)",
+    "Sewer Backup (Use Comments) (SA)",
+    "Culvert Blocked/Needs Cleaning (SE)",
+    "Manhole Overflow (Use Comments) (SA1)")
+
+## Subset data to only include responsive descriptors
+df_precip_calls_with_cp_precip <-
+  df_sewer_calls_with_cp_precip %>%
+  filter(descriptor %in% precip_descriptors)
+
+## Create new daily dataframe with only responsive descriptors
+df_precip_calls_daily <-
+  df_precip_calls_with_cp_precip %>%
+  filter(descriptor %in% precip_descriptors) %>%
+  group_by(created_date, descriptor) %>%
+  summarise(n_calls = n(),
+            precip_in = first(precip_in)) %>%
+  ungroup() %>%
+  group_by(created_date) %>%
+  mutate(total_daily_calls = sum(n_calls)) %>%
+  ungroup() 
+
+## Write to csv
+## All calls
+write_csv(df_precip_calls_with_cp_precip,
+          here("data",
+               "processed",
+               "311",
+               "precip_responsive_calls.csv"))
+
+## Daily summary
+write_csv(df_precip_calls_daily,
+          here("data",
+               "processed",
+               "311",
+               "precip_responsive_calls_daily.csv"))

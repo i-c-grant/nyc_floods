@@ -1,0 +1,27 @@
+* Zhao et al. (2022) Urban-Aware U-Net
+:PROPERTIES:
+:DATA:     Sentinel-1 multitemporal intensity and coherence
+:YEAR:     2022
+:CASES:    Houston, Somalia, Japan, Mozambique
+:METHOD:   CNN, U-Net on SAR data
+:FLOODTYPE: hurricane, typhoon, pluvial
+:END:
+
+- derives a probabilistic urban mask from SAR data
+  - channel-wise attention 
+  - urban-aware normalization
+* Websites
+** [[https://jacobgil.github.io/deeplearning/activelearning#introduction][Overview of active learning]]
+
+* Agonafir et al. (2022), NYC 311 flooding
+:PROPERTIES:
+:DATA: 311 calls, Stage IV precipitation
+:YEAR: 2022
+:CASES: NYC
+:METHOD: negative binomial GLM with LASSO, ZIP code aggregated
+:FLOODTYPE: pluvial
+:END:
+
+- aggregates 311 calls to ZIP code weeks
+- predicts flooding calls on the basis of infra. related calls + precip.
+- notes that future work could include rainfall intensity
