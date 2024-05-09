@@ -5,6 +5,7 @@ total_calls <- nrow(sf_flooding_calls)
 
 df_calls_per_hour <-
   sf_flooding_calls %>%
+  filter(precip_in == 0) %>%
   mutate(hour_of_day = as.numeric(str_sub(time_of_day, 1, 2))) %>%
   group_by(hour_of_day) %>%
   summarise(calls_per_hour = n() / total_calls) %>%
