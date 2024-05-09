@@ -206,3 +206,45 @@ load_precip_calls_stars <- function(start_datetime,
   return(precip_calls_stars)
   
 }
+
+add_cumulative_precip <- function(stars_stage4) {
+## add cumulative precipitation
+stars_precip_calls <-
+  stars_precip_calls %>%
+  as_tibble %>%
+  group_by(x, y) %>%
+  arrange(time) %>%
+  mutate(cumulative_precip =
+           cumsum(hourly_precip)) %>%
+  st_as_stars(dims = c("x", "y", "time"))
+
+  st_crs(stars_precip_calls) <- st_crs("EPSG:2263")
+
+  return(stars_precip_calls)
+}
+
+calc_decay <- function(x, decay) {
+  ans <- numeric(length(x))
+  ans[1] <- x[1]
+  
+  for (i in 2:length(x)) {
+    ans[i] <- max(0, decay * (ans[i - 1] + x[i]))
+  }
+  
+  return(ans)
+}
+
+add_decay_precip <- function(stars_stage4, decay) {
+## add cumulative precipitation
+stars_precip_calls <-
+  stars_precip_calls %>%
+  as_tibble %>%
+  group_by(x, y) %>%
+  arrange(time) %>%
+  mutate(decay_precip = calc_decay(hourly_precip, decay)) %>%
+  st_as_stars(dims = c("x", "y", "time"))
+
+  st_crs(stars_precip_calls) <- st_crs("EPSG:2263")
+
+  return(stars_precip_calls)
+}

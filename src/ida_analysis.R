@@ -51,17 +51,8 @@ stars_precip_calls <-
 
 ## add cumulative precipitation
 stars_precip_calls <-
-  stars_precip_calls %>%
-  as_tibble %>%
-  group_by(x, y) %>%
-  arrange(time) %>%
-  mutate(cumulative_precip =
-           cumsum(hourly_precip),
-         precip_decay_sum =
-           calc_decay_sum(hourly_precip, 3),
-         precip_decay_mult =
-            calc_decay_mult(hourly_precip, .95)) %>%
-  st_as_stars(dims = c("x", "y", "time"))
+  add_cumulative_precip %>%
+  add_decay_precip(decay = .95)
 
 ## add time of day adjustment
 stars_precip_calls <- 
