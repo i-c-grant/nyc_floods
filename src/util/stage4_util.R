@@ -159,7 +159,7 @@ load_nyc_stage4_df <- function(dt_start,
   rasts <- map(rasts, \(r) clip_to_nyc(r, "nyc_state_plane"))
     
   if (disagg) {
-    rasts <- map(rasts, \(r) terra::disagg(r, 8, method = "bilinear"))
+    rasts <- map(rasts, \(r) terra::disagg(r, 16, method = "bilinear"))
   }
 
   df <- map2(rasts, dts,
